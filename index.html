@@ -5,7 +5,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Moore Budget Less Problems</title>
+
   <link rel="stylesheet" href="styles.css"/>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/moore-budget-less-problems/manifest.webmanifest" />
+  <meta name="theme-color" content="#0b0f14" />
+  <link rel="apple-touch-icon" href="/moore-budget-less-problems/icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
   <!-- Charts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -17,11 +25,16 @@
   <script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/cal-heatmap.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/cal-heatmap.css">
 </head>
+
 <body>
   <header class="header">
     <div class="brand">
       <div class="glass-icon pulse">
-  <span class="mark-text"><span class="m">M</span><span class="b">B</span></span>
+  <img
+    class="brand-logo"
+    src="icons/Logo.png"
+    alt="Moore Budget Less Problems logo"
+  />
 </div>
       <div>
         <h1>Moore Budget Less Problems</h1>
@@ -457,5 +470,14 @@
   </div>
 
   <script src="app.js"></script>
+
+  <!-- Service worker registration -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/moore-budget-less-problems/service-worker.js");
+      });
+    }
+  </script>
 </body>
 </html>

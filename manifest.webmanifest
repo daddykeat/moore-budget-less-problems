@@ -1,0 +1,14 @@
+{
+  "name": "Moore Budget Less Problems",
+  "short_name": "Moore Budget",
+  "start_url": "/moore-budget-less-problems/",
+  "scope": "/moore-budget-less-problems/",
+  "display": "standalone",
+  "background_color": "#0b0f14",
+  "theme_color": "#0b0f14",
+  "description": "Simple cashflow. Clear decisions. Less problems.",
+  "icons": [
+    { "src": "/moore-budget-less-problems/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/moore-budget-less-problems/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

@@ -1,5 +1,5 @@
 // app.js
-// Debt War Room (Consolidated)
+// Moore Budget Less Problems (Consolidated)
 // - Any pay schedule via payDates list
 // - Debt/Invest toggles
 // - Multiple profiles

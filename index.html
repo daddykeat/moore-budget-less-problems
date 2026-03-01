@@ -1,0 +1,461 @@
+<!-- index.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Moore Budget Less Problems</title>
+  <link rel="stylesheet" href="styles.css"/>
+
+  <!-- Charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- PDF generation -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+  <!-- Heatmap -->
+  <script src="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/cal-heatmap.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cal-heatmap@4.2.4/dist/cal-heatmap.css">
+</head>
+<body>
+  <header class="header">
+    <div class="brand">
+      <div class="glass-icon pulse">
+  <span class="mark-text"><span class="m">M</span><span class="b">B</span></span>
+</div>
+      <div>
+        <h1>Moore Budget Less Problems</h1>
+        <div class="tagline">Simple cashflow. Clear decisions. Less problems.</div>
+        <p class="sub">Budget • Debt • Savings • Investments • Cashflow</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <label class="toggle">
+        <input type="checkbox" id="toggleDebtMode">
+        <span>Debt Mode</span>
+      </label>
+
+      <label class="toggle">
+        <input type="checkbox" id="toggleInvestMode">
+        <span>Investments</span>
+      </label>
+
+      <select id="profileSelect" class="profile"></select>
+      <button class="btn ghost" id="btnNewProfile">New Profile</button>
+
+      <button class="btn ghost" id="btnExport">Export JSON</button>
+      <label class="btn ghost file">
+        Import JSON
+        <input type="file" id="fileImport" accept="application/json"/>
+      </label>
+      <button class="btn" id="btnSave">Save</button>
+      <button class="btn danger" id="btnReset">Reset</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="inputs">Inputs</button>
+      <button class="tab" data-tab="strategy" data-debt="1">Strategy</button>
+      <button class="tab" data-tab="calendar">30-Day Cashflow</button>
+      <button class="tab" data-tab="tracker">Tracker</button>
+    </nav>
+
+    <!-- DASHBOARD -->
+    <section class="panel active" id="tab-dashboard">
+      <div class="grid cards">
+        <div class="card">
+          <h3>Monthly Income</h3>
+          <div class="metric" id="mIncome">$0</div>
+          <div class="meta" id="mIncomeMeta">Computed from pay dates</div>
+        </div>
+        <div class="card">
+          <h3>Monthly Fixed Bills</h3>
+          <div class="metric" id="mFixed">$0</div>
+          <div class="meta">Loans, insurance, subscriptions, etc.</div>
+        </div>
+        <div class="card" data-debt="1">
+          <h3>Monthly Debt Minimums</h3>
+          <div class="metric" id="mMins">$0</div>
+          <div class="meta">Minimum payments (cards/loans/BNPL)</div>
+        </div>
+        <div class="card">
+          <h3>Variable Budgets</h3>
+          <div class="metric" id="mVars">$0</div>
+          <div class="meta">Groceries, gas, other</div>
+        </div>
+
+        <div class="card highlight">
+          <h3>Attack Power</h3>
+          <div class="metric" id="mAttack">$0</div>
+          <div class="meta">Income − (Fixed + Minimums + Variables)</div>
+        </div>
+
+        <div class="card" data-invest="1">
+          <h3>Net Worth (Snapshot)</h3>
+          <div class="metric" id="mNetWorth">$0</div>
+          <div class="meta" id="mNetWorthMeta">Assets − Debts</div>
+        </div>
+      </div>
+
+      <div class="grid two">
+        <div class="card" data-debt="1">
+          <h3>Debt Thermometer</h3>
+          <canvas id="chartThermo" height="140"></canvas>
+          <div class="meta" id="thermoMeta"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Projection</h3>
+            <button class="btn small" id="btnPDF">Generate PDF</button>
+          </div>
+          <div class="stack">
+            <div class="row" data-debt="1">
+              <div class="label">Total Debt (tracked)</div>
+              <div class="value" id="pDebt">$0</div>
+            </div>
+            <div class="row">
+              <div class="label">Avg Monthly Attack</div>
+              <div class="value" id="pAttack">$0</div>
+            </div>
+            <div class="row" data-debt="1">
+              <div class="label">Est. Months Remaining</div>
+              <div class="value" id="pMonths">—</div>
+            </div>
+            <div class="row" data-debt="1">
+              <div class="label">Projected Debt-Free Month (Approx)</div>
+              <div class="value" id="pDate">—</div>
+            </div>
+            <div class="hr"></div>
+            <div class="row" data-invest="1">
+              <div class="label">Savings / Invest Monthly</div>
+              <div class="value" id="pSaveInv">$0</div>
+            </div>
+            <div class="row">
+              <div class="label">Emergency Fund Goal</div>
+              <div class="value" id="pEFGoal">$0</div>
+            </div>
+          </div>
+          <p class="hint">Local data only. Export JSON monthly for backup.</p>
+        </div>
+      </div>
+
+      <div class="grid two">
+        <div class="card" data-debt="1">
+          <h3>Due Date Cluster Heatmap</h3>
+          <div id="heatmap"></div>
+          <p class="hint">Darker days = more payments landing. Use this to avoid “stacked” weeks.</p>
+        </div>
+
+        <div class="card" data-invest="1">
+          <h3>Net Worth Timeline (12 months)</h3>
+          <canvas id="chartNetWorth" height="140"></canvas>
+          <div class="meta">Projection based on your current inputs (simple model).</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INPUTS -->
+    <section class="panel" id="tab-inputs">
+      <div class="grid two">
+        <div class="card">
+          <div class="card-head">
+            <h3>Income (Any Pay Schedule)</h3>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn small ghost" id="openPayModal">Quick Add Pay Dates</button>
+              <button class="btn small" id="addIncome">+ Add</button>
+            </div>
+          </div>
+          <div id="incomeList" class="list"></div>
+          <p class="hint">Enter pay dates directly. Works with any schedule (irregular, rotating, bonuses).</p>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Fixed Bills</h3>
+            <button class="btn small" id="addBill">+ Add</button>
+          </div>
+          <div id="billList" class="list"></div>
+        </div>
+      </div>
+
+      <div class="grid two">
+        <div class="card" data-debt="1">
+          <div class="card-head">
+            <h3>Debts</h3>
+            <button class="btn small" id="addDebt">+ Add</button>
+          </div>
+          <div id="debtList" class="list"></div>
+          <p class="hint">Include cards, loans, BNPL. Enter APR if known.</p>
+        </div>
+
+        <div class="card" data-invest="1">
+          <div class="card-head">
+            <h3>Savings & Investments</h3>
+            <button class="btn small" id="addAsset">+ Add</button>
+          </div>
+          <div id="assetList" class="list"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Budgets & Guardrails</h3>
+        <div class="grid three">
+          <div class="field">
+            <label>Groceries / month</label>
+            <input type="number" id="budgetGroceries" min="0" step="0.01"/>
+          </div>
+          <div class="field">
+            <label>Gas / month</label>
+            <input type="number" id="budgetGas" min="0" step="0.01"/>
+          </div>
+          <div class="field">
+            <label>Other variable / month</label>
+            <input type="number" id="budgetOther" min="0" step="0.01"/>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="grid two">
+          <div class="field">
+            <label>Safety Floor (checking)</label>
+            <input type="number" id="safetyFloor" min="0" step="0.01"/>
+          </div>
+          <div class="field">
+            <label>Emergency Fund Goal</label>
+            <input type="number" id="efGoal" min="0" step="0.01"/>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STRATEGY -->
+    <section class="panel" id="tab-strategy" data-debt="1">
+      <div class="grid two">
+        <div class="card">
+          <h3>Payoff Strategy</h3>
+          <div class="grid two">
+            <div class="field">
+              <label>Strategy</label>
+              <select id="strategySelect">
+                <option value="hybrid">Hybrid (small clutter → high APR)</option>
+                <option value="avalanche">Avalanche (highest APR)</option>
+                <option value="snowball">Snowball (smallest balance)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Monthly Extra Payment</label>
+              <input type="number" id="extraPayment" min="0" step="0.01"/>
+            </div>
+          </div>
+          <p class="hint">Uses computed attack power. Extra payment is optional.</p>
+        </div>
+
+        <div class="card">
+          <h3>Debt Kill Ladder</h3>
+          <div id="ladder" class="ladder"></div>
+          <p class="hint">Updates from your debt list + strategy.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>12-Month Plan Preview (Quick)</h3>
+        <div id="planPreview" class="plan"></div>
+        <p class="hint">Fast preview. Use the simulation for interest-accurate payoff months.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>Interest-Based Payoff Simulation</h3>
+          <button class="btn small" id="btnRunSim">Run Simulation</button>
+        </div>
+        <div id="simSummary" class="stack"></div>
+        <div class="hr"></div>
+        <div id="simTable" class="list"></div>
+        <p class="hint">Daily compounding APR, minimums + attack power to ladder target.</p>
+      </div>
+    </section>
+
+    <!-- CALENDAR -->
+    <section class="panel" id="tab-calendar">
+      <div class="grid two">
+        <div class="card">
+          <h3>Starting Balance + Window</h3>
+          <div class="grid three">
+            <div class="field">
+              <label>Starting Checking Balance</label>
+              <input type="number" id="startingBalance" min="0" step="0.01"/>
+            </div>
+            <div class="field">
+              <label>Start Date</label>
+              <input type="date" id="startDate"/>
+            </div>
+            <div class="field">
+              <label>Days to Simulate</label>
+              <input type="number" id="daysToSim" min="7" max="120" step="1"/>
+            </div>
+          </div>
+          <button class="btn" id="btnSim">Simulate Cashflow</button>
+          <p class="hint">Calendar uses your pay dates + monthly due days. Planning tool, not a bank ledger.</p>
+        </div>
+
+        <div class="card">
+          <h3>Warnings</h3>
+          <div id="warnings" class="warnings"></div>
+          <div class="hr"></div>
+          <h4>Assumptions</h4>
+          <ul class="bullets">
+            <li>Bills occur on their “due day” each month (1–28).</li>
+            <li>Debt minimums occur on their “due day”.</li>
+            <li>Income occurs exactly on your pay dates list.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Cashflow Calendar</h3>
+        <div id="calendarList" class="calendar"></div>
+      </div>
+    </section>
+
+    <!-- TRACKER -->
+    <section class="panel" id="tab-tracker">
+      <div class="grid two">
+        <div class="card">
+          <h3>90-Day Stabilization Scoreboard</h3>
+          <div id="scoreboard" class="score"></div>
+          <p class="hint">Track behavior weekly. This is how the plan sticks.</p>
+        </div>
+
+        <div class="card">
+          <h3>Freed Monthly Payments</h3>
+          <div id="freedList" class="list"></div>
+          <button class="btn small" id="addFreed">+ Add Freed Payment</button>
+          <p class="hint">When you eliminate a payment, log it. Your margin grows.</p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div>Built for execution. Local data only (saved in your browser).</div>
+      <div class="muted">Tip: Export JSON monthly as a backup.</div>
+    </footer>
+  </main>
+
+  <!-- Quick Add Pay Dates Modal -->
+  <div class="modal" id="payModal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3>Quick Add Pay Dates</h3>
+        <button class="iconbtn" id="closePayModal">Close</button>
+      </div>
+
+      <div class="grid two">
+        <div class="field">
+          <label>Apply to Income</label>
+          <select id="payModalIncome"></select>
+        </div>
+        <div class="field">
+          <label>Generate Count</label>
+          <input type="number" id="payCount" min="1" max="60" step="1" value="12">
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="grid two">
+        <div class="field">
+          <label>Start Date</label>
+          <input type="date" id="payStartDate">
+        </div>
+        <div class="field">
+          <label>Mode</label>
+          <select id="payMode">
+            <option value="everyN">Every N days</option>
+            <option value="weekdays">Specific weekdays</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="modeEveryN" class="grid two">
+        <div class="field">
+          <label>Every N days</label>
+          <input type="number" id="payEveryN" min="1" max="60" step="1" value="14">
+        </div>
+        <div class="field">
+          <label>Info</label>
+          <input type="text" value="Generates from Start Date" disabled>
+        </div>
+      </div>
+
+      <div id="modeWeekdays" class="grid two" style="display:none;">
+        <div class="field">
+          <label>Weekdays</label>
+          <div class="weekday-grid" id="weekdayGrid">
+            <label><input type="checkbox" value="0"> Sun</label>
+            <label><input type="checkbox" value="1"> Mon</label>
+            <label><input type="checkbox" value="2"> Tue</label>
+            <label><input type="checkbox" value="3"> Wed</label>
+            <label><input type="checkbox" value="4"> Thu</label>
+            <label><input type="checkbox" value="5"> Fri</label>
+            <label><input type="checkbox" value="6"> Sat</label>
+          </div>
+        </div>
+        <div class="field">
+          <label>Interval (weeks)</label>
+          <input type="number" id="payWeekInterval" min="1" max="8" step="1" value="1">
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="card" style="box-shadow:none;">
+        <h4>Shortcut: Generate from last paycheck</h4>
+        <div class="grid three">
+          <div class="field">
+            <label>Last Pay Date</label>
+            <input type="date" id="lastPayDate">
+          </div>
+          <div class="field">
+            <label>Days Between Checks</label>
+            <input type="number" id="lastPayEveryN" min="1" max="60" step="1" value="14">
+          </div>
+          <div class="field">
+            <label>Count</label>
+            <input type="number" id="lastPayCount" min="1" max="60" step="1" value="12">
+          </div>
+        </div>
+        <button class="btn ghost" id="btnGenFromLast" style="margin-top:10px;">Generate from Last Pay</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="field">
+        <label>Exclude Dates (optional, one per line YYYY-MM-DD)</label>
+        <textarea id="payExclude" rows="3" placeholder="2026-03-25"></textarea>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="grid three">
+        <button class="btn" id="btnGeneratePayDates">Generate + Add</button>
+        <button class="btn ghost" id="btnPreviewPayDates">Preview</button>
+        <button class="btn ghost" id="btnPasteClean">Paste + Clean</button>
+      </div>
+
+      <div class="hr"></div>
+
+      <div class="card" style="box-shadow:none;">
+        <h4>Preview Output</h4>
+        <div id="payPreview" class="meta">—</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
